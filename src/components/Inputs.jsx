@@ -1,33 +1,77 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
-export default function Example({setCard}) {
+export default function Inputs({ setCardRefresh }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const inputRef = useRef(null);
 
-  const handleSave = async() => {
-    console.log("Title:", title);
-    console.log("content:", content);
+  // Collapse note when clicked outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (inputRef.current && !inputRef.current.contains(event.target)) {
+        if (!title.trim() && !content.trim()) {
+          setIsExpanded(false);
+        }
+      }
+    };
 
-    const res = await fetch("http://localhost:8000/create-note", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${localStorage.getItem('token')}`
-      },
-      body: JSON.stringify({title,content,is_pinned:false,is_trashed:false,color:"bg-white"})
-    });
-    if (res.status !== 201) {
-      alert("Something went wrong while saving the note.");
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [title, content]);
+
+  const handleSave = async () => {
+    if (!content.trim() && !title.trim()) {
+      alert("Note cannot be empty.");
+      return;
     }
-    // Reset or handle save logic
-    setIsExpanded(false);
-    setTitle("");
-    setContent("");
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("You are not logged in. Please sign in again.");
+      return;
+    }
+
+    try {
+      const res = await fetch("http://localhost:8000/note/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title,
+          content,
+          is_pinned: false,
+          color: "bg-white",
+        }),
+      });
+
+      if (res.status === 201) {
+        setTitle("");
+        setContent("");
+        setIsExpanded(false);
+        setCardRefresh((prev) => !prev); // refresh notes
+      } else if (res.status === 401) {
+        alert("Session expired. Please sign in again.");
+      } else {
+        alert("Something went wrong while saving the note.");
+      }
+    } catch (error) {
+      console.error("Save note error:", error);
+      alert("Network error. Try again later.");
+    }
   };
 
   return (
-    <div className="m-6 mx-4 lg:mx-96 bg-neutral-100 text-gray-900 rounded-lg shadow-md p-4">
+    <div
+      ref={inputRef}
+      className={`m-6 mx-4 lg:mx-96 bg-neutral-100 text-gray-900 rounded-lg shadow-md p-4 transition-all duration-200 ${
+        isExpanded ? "min-h-[130px]" : "min-h-[56px]"
+      }`}
+    >
       {isExpanded && (
         <input
           type="text"
@@ -38,7 +82,7 @@ export default function Example({setCard}) {
         />
       )}
       <input
-        type="email"
+        type="text"
         placeholder="Take a note..."
         className="w-full text-base bg-transparent outline-none"
         value={content}

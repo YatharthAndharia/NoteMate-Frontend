@@ -2,7 +2,7 @@ import { useState } from "react";
 import Signin from './Signin';
 
 export default function Signup() {
-  const [formData, setFormData] = useState({ name: "", email: "", password: "" });
+  const [formData, setFormData] = useState({ name: "", email: "", password: "" ,confirmPassword: ""});
   const [isSignedUp, setIsSignedUp] = useState(false);
   const [error, setError] = useState("");
 
@@ -13,11 +13,17 @@ export default function Signup() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-
+    if (formData.password !== formData.confirmPassword) {
+    setError("Password and Confirm Password do not match");
+    return;
+  }
     try {
-        console.log(formData);
+      if (formData.password !== formData.confirmPassword) {
+    setError("Password and Confirm Password do not match");
+  }
+        console.log(formData,formData.password,formData.confirmPassword);
         
-      const res = await fetch("http://localhost:8000/sign-up", {
+        const res = await fetch("http://localhost:8000/sign-up", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -93,6 +99,21 @@ export default function Signup() {
                   type="password"
                   required
                   value={formData.password}
+                  onChange={handleChange}
+                  className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm sm:text-sm"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">confirm Password</label>
+              <div className="mt-1">
+                <input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  required
+                  value={formData.confirmPassword}
                   onChange={handleChange}
                   className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm sm:text-sm"
                 />

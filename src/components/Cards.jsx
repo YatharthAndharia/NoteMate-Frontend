@@ -1,259 +1,288 @@
-import { useState,useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
-  AcademicCapIcon,
-  BanknotesIcon,
-  CheckBadgeIcon,
-  ClockIcon,
-  ReceiptRefundIcon,
-  UsersIcon,
-} from '@heroicons/react/24/outline';
+  TrashIcon,
+  PencilIcon,
+  PaperClipIcon,
+} from "@heroicons/react/24/outline";
 import { Button } from "@headlessui/react";
-
-
-const initialActions=async () => {
-  const res = await fetch("http://localhost:8000/get-notes", {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${localStorage.getItem('token')}`
-    },
-  });
-
-  if (res.status !== 200) {
-    alert("Something went wrong while saving the note.");
-  }
-  const data=await res.json();
-  console.log(data.notes[0]);
-  
-  const actions = data.notes.map(note => ({
-    title: note[2],
-    href: '#',
-    content: note[3],
-    color: note[6] || 'bg-white',
-  }));
-  console.log(actions);
-  
-  return actions;
-}
-// const initialActions = [
-//   {
-//     title: 'Request time off',
-//     href: '#',
-//     icon: ClockIcon,
-//     iconForeground: 'text-teal-700',
-//     iconBackground: 'bg-teal-50',
-//     content: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-//     color: 'bg-white',
-//   },
-//   {
-//     title: 'Benefits',
-//     href: '#',
-//     icon: CheckBadgeIcon,
-//     iconForeground: 'text-purple-700',
-//     iconBackground: 'bg-purple-50',
-//     content: 'Hi Hello',
-//     color: 'bg-white',
-//   },
-//   {
-//     title: 'Schedule a one-on-one',
-//     href: '#',
-//     icon: UsersIcon,
-//     iconForeground: 'text-sky-700',
-//     iconBackground: 'bg-sky-50',
-//     content: 'Hey',
-//     color: 'bg-white',
-//   },
-//   {
-//     title: 'Payroll',
-//     href: '#',
-//     icon: BanknotesIcon,
-//     iconForeground: 'text-yellow-700',
-//     iconBackground: 'bg-yellow-50',
-//     content: 'Hey',
-//     color: 'bg-white',
-//   },
-//   {
-//     title: 'Submit an expense',
-//     href: '#',
-//     icon: ReceiptRefundIcon,
-//     iconForeground: 'text-rose-700',
-//     iconBackground: 'bg-rose-50',
-//     content: 'Hey',
-//     color: 'bg-white',
-//   },
-//   {
-//     title: 'Training',
-//     href: '#',
-//     icon: AcademicCapIcon,
-//     iconForeground: 'text-indigo-700',
-//     iconBackground: 'bg-indigo-50',
-//     content: 'Hiiiiii',
-//     color: 'bg-white',
-//   },
-  
-// ];
+import { formatDistanceToNow } from "date-fns"; // ✅ install if not already: npm install date-fns
 
 function classNames(...classes) {
-  return classes.filter(Boolean).join(' ');
+  return classes.filter(Boolean).join(" ");
 }
 
-export default function Example({search,setSearch}) {
-    
-    
+export default function Cards({ search, setSearch, cardRefresh }) {
   const [actions, setActions] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
-  const [tempTitle, setTempTitle] = useState('');
-  const [tempContent, setTempContent] = useState('');
-  const [tempColor, setTempColor] = useState('');
+  const [tempTitle, setTempTitle] = useState("");
+  const [tempContent, setTempContent] = useState("");
+  const [tempColor, setTempColor] = useState("");
+  const cardRefs = useRef([]);
+
+  const colorOptions = [
+    "bg-white",
+    "bg-red-200",
+    "bg-yellow-200",
+    "bg-green-200",
+    "bg-blue-200",
+    "bg-pink-200",
+    "bg-indigo-200",
+  ];
 
   useEffect(() => {
     const fetchActions = async () => {
       try {
-        const res = await fetch("http://localhost:8000/get-notes", {
-          method: "GET",
+        const res = await fetch("http://localhost:8000/note/all", {
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${localStorage.getItem('token')}`,
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         });
-
-        if (res.status !== 200) {
-          throw new Error("Something went wrong while fetching the notes.");
-        }
+        if (res.status !== 200) throw new Error("Failed to fetch notes");
 
         const data = await res.json();
-        // console.log(data.notes[0]);
-
-        const actions = data.notes.map(note => ({
-          title: note[2],
-          href: '#',
-          icon: CheckBadgeIcon,
-          iconForeground: 'text-purple-700',
-          iconBackground: 'bg-purple-50',
-          content: note[3],
-          color: note[6] || 'bg-white',
+        const notes = data.notes.map((note) => ({
+          note_id: note.note_id,
+          title: note.title,
+          content: note.content,
+          color: note.color || "bg-white",
+          is_pinned: note.is_pinned,
+          created_at: note.created_at,
+          updated_at: note.updated_at,
         }));
-        // console.log(actions);
 
-        setActions(actions);
+        const pinned = notes.filter((n) => n.is_pinned);
+        const unpinned = notes
+          .filter((n) => !n.is_pinned)
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        setActions([...pinned, ...unpinned]);
       } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
+        console.error(err);
       }
     };
-
     fetchActions();
-  }, []);
+  }, [cardRefresh]);
 
-  const colorOptions = [
-    'bg-white',
-    'bg-red-100',
-    'bg-yellow-100',
-    'bg-green-100',
-    'bg-blue-100',
-    'bg-purple-100',
-  ];
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        editingIndex !== null &&
+        cardRefs.current[editingIndex] &&
+        !cardRefs.current[editingIndex].contains(e.target)
+      ) {
+        setEditingIndex(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [editingIndex]);
 
   const handleEdit = (index) => {
+    const note = actions[index];
     setEditingIndex(index);
-    setTempTitle(actions[index].title);
-    setTempContent(actions[index].content);
-    setTempColor(actions[index].color || 'bg-white');
+    setTempTitle(note.title);
+    setTempContent(note.content);
+    setTempColor(note.color || "bg-white");
   };
 
-  const handleSave = () => {
-    if (editingIndex !== null) {
-      const updated = [...actions];
-      updated[editingIndex] = {
-        ...updated[editingIndex],
-        title: tempTitle,
-        content: tempContent,
-        color: tempColor,
-      };
-      setActions(updated);
-      setEditingIndex(null);
+  const handleSave = async () => {
+    if (editingIndex === null) return;
+    const note = actions[editingIndex];
+    try {
+      const res = await fetch(`http://localhost:8000/note/update/${note.note_id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          title: tempTitle,
+          content: tempContent,
+          color: tempColor,
+          is_pinned: note.is_pinned,
+        }),
+      });
+      if (res.status === 200) {
+        const updated = [...actions];
+        updated[editingIndex] = {
+          ...updated[editingIndex],
+          title: tempTitle,
+          content: tempContent,
+          color: tempColor,
+        };
+        setActions(updated);
+        setEditingIndex(null);
+      } else {
+        alert("Failed to update note.");
+      }
+    } catch (error) {
+      alert("Network error.");
+      console.error(error);
+    }
+  };
+
+  const togglePin = async (index) => {
+    const note = actions[index];
+    const updatedPin = !note.is_pinned;
+    try {
+      const res = await fetch(`http://localhost:8000/note/update/${note.note_id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          ...note,
+          is_pinned: updatedPin,
+        }),
+      });
+
+      if (res.status === 200) {
+        const updated = [...actions];
+        updated[index] = { ...note, is_pinned: updatedPin };
+
+        const pinned = updated.filter((n) => n.is_pinned);
+        const unpinned = updated
+          .filter((n) => !n.is_pinned)
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        setActions([...pinned, ...unpinned]);
+      }
+    } catch (err) {
+      alert("Pin update failed");
+      console.error(err);
+    }
+  };
+
+  const handleDelete = async (index) => {
+    const note = actions[index];
+    if (!window.confirm("Delete this note?")) return;
+    try {
+      const res = await fetch(`http://localhost:8000/note/delete/${note.note_id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      if (res.status === 200) {
+        setActions((prev) => prev.filter((_, i) => i !== index));
+        if (editingIndex === index) setEditingIndex(null);
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 
   return (
     <>
-    <div className="divide-y divide-gray-200 overflow-hidden rounded-lg bg-white sm:grid sm:grid-cols-3 sm:gap-px sm:divide-y-0 m-16">
-      {actions
-            .filter(action => {
-                if (!search) return true;
-              
-                // Escape special regex characters except * and ?
-                const escaped = search.replace(/[-/\\^$+?.()|[\]{}]/g, '\\$&');
-                
-                // Replace wildcards with regex equivalents
-                const pattern = escaped.replace(/\*/g, '.*').replace(/\?/g, '.');
-                const regex = new RegExp(pattern, 'i'); // 'i' for case-insensitive
-              
-                return regex.test(action.title) || regex.test(action.content);
-              })
-        .map((action, index) => (
-        <div
-          key={index}
-          className={classNames(
-            action.color || 'bg-white',
-            'relative group p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-500 m-4 rounded shadow'
-          )}
-        >
-          {editingIndex === index ? (
-            <div className="text-gray-500 rounded-lg">
-              <input
-                type="text"
-                className="w-full text-lg font-semibold bg-transparent outline-none mb-1"
-                value={tempTitle}
-                onChange={(e) => setTempTitle(e.target.value)}
-              />
-              <input
-                type="text"
-                className="w-full text-base bg-transparent outline-none"
-                value={tempContent}
-                onChange={(e) => setTempContent(e.target.value)}
-              />
-              <div className="flex space-x-2 mt-2">
-                {colorOptions.map((color, idx) => (
-                  <div
-                    key={idx}
-                    className={`w-6 h-6 rounded-full cursor-pointer border-2 ${color} ${
-                      tempColor === color ? 'border-black' : 'border-transparent'
-                    }`}
-                    onClick={() => setTempColor(color)}
+      <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-8 py-10">
+        {actions
+          .filter((note) => {
+            if (!search) return true;
+            const escaped = search.replace(/[-/\\^$+?.()|[\]{}]/g, "\\$&");
+            const pattern = escaped.replace(/\*/g, ".*").replace(/\?/g, ".");
+            const regex = new RegExp(pattern, "i");
+            return regex.test(note.title) || regex.test(note.content);
+          })
+          .map((note, index) => (
+            <div
+              key={index}
+              ref={(el) => (cardRefs.current[index] = el)}
+              className={classNames(
+                note.color || "bg-white",
+                "relative rounded-xl p-6 border border-gray-300 transition-all duration-300 hover:scale-105 shadow-lg overflow-hidden",
+                editingIndex === index ? "min-h-[250px]" : "max-h-[140px]"
+              )}
+            >
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  togglePin(index);
+                }}
+                className="absolute top-3 right-3"
+                title={note.is_pinned ? "Unpin" : "Pin"}
+              >
+                <PaperClipIcon
+                  className={classNames(
+                    "h-6 w-6 transition-all duration-200",
+                    note.is_pinned
+                      ? "rotate-45 text-yellow-500"
+                      : "text-gray-400 hover:text-indigo-400"
+                  )}
+                />
+              </button>
+
+              {editingIndex === index ? (
+                <div>
+                  <input
+                    className="w-full text-lg font-bold mb-2 bg-transparent border-b border-gray-400 focus:outline-none"
+                    value={tempTitle}
+                    onChange={(e) => setTempTitle(e.target.value)}
                   />
-                ))}
-              </div>
-              <div className="mt-2 text-right">
-                <button
-                  onClick={handleSave}
-                  className="text-sm text-black hover:text-slate-500 shadow p-2 rounded"
-                >
-                  Save
-                </button>
-              </div>
+                  <textarea
+                    className="w-full h-24 bg-transparent border-b border-gray-300 resize-none focus:outline-none"
+                    value={tempContent}
+                    onChange={(e) => setTempContent(e.target.value)}
+                  />
+                  <div className="text-xs text-gray-500 mt-2">
+                    Last updated{" "}
+                    {note.updated_at
+                      ? formatDistanceToNow(new Date(note.updated_at), { addSuffix: true })
+                      : "just now"}
+                  </div>
+                  <div className="flex gap-2 mt-3">
+                    {colorOptions.map((color, i) => (
+                      <div
+                        key={i}
+                        onClick={() => setTempColor(color)}
+                        className={`w-5 h-5 rounded-full border-2 cursor-pointer ${color} ${
+                          tempColor === color ? "border-black" : "border-transparent"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex justify-end gap-3 mt-4">
+                    <button
+                      onClick={handleSave}
+                      className="flex items-center gap-2 px-4 py-2 text-sm bg-green-200 hover:bg-green-300 text-green-900 rounded shadow"
+                    >
+                      <PencilIcon className="w-4 h-4" />
+                      Save
+                    </button>
+                    <button
+                      onClick={() => handleDelete(index)}
+                      className="flex items-center gap-2 px-4 py-2 text-sm bg-red-200 hover:bg-red-300 text-red-900 rounded shadow"
+                    >
+                      <TrashIcon className="w-4 h-4" />
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div onClick={() => handleEdit(index)} className="cursor-pointer">
+                  <h3 className="text-xl font-semibold text-gray-800 mb-1">{note.title}</h3>
+                  <p className="text-sm text-gray-700 whitespace-pre-line line-clamp-4">
+                    {note.content}
+                  </p>
+                </div>
+              )}
             </div>
-          ) : (
-            <div onClick={() => handleEdit(index)} className="cursor-pointer">
-              <h3 className="text-lg font-medium">{action.title}</h3>
-              <p className="mt-2 text-sm text-gray-700">
-                {action.content.length > 20
-                  ? action.content.substring(0, 20) + '...'
-                  : action.content}
-              </p>
-            </div>
-          )}
+          ))}
+      </div>
+
+      {search && (
+        <div className="text-center mb-10">
+          <Button
+            onClick={() => setSearch(null)}
+            className="px-4 py-2 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 shadow-sm"
+          >
+            Clear Search
+          </Button>
         </div>
-      ))}
-    </div>
-    {search && (
-        <div className="text-center text-gray-800">
-            <Button onClick={()=>{setSearch(null)}} className='rounded shadow text-gray-500 p-2 px-4 cursor-pointer bg-gray-100 hover:bg-gray-200'>
-                Clear Search
-            </Button>
-        </div>
-    )}
+      )}
     </>
   );
 }

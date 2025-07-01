@@ -1,36 +1,38 @@
-import { use, useState } from 'react'
-import './App.css'
-import Cards from './components/Cards'
-import Searchbar from './components/Search'
-import Inputs from './components/Inputs'
-import ChatBot from "react-chatbotify";
-import Signup from './components/Signup';
+import { useState } from 'react';
+import './App.css';
 import Navbar from './components/Navbar';
-
+import Inputs from './components/Inputs';
+import Cards from './components/Cards';
+import ChatBot from './components/ChatBot'; // ✅ Your custom ChatBot component
 
 function App() {
-  const [search, setSearch] = useState(null)
+  const [search, setSearch] = useState(null);
   const [isLogIn, setIsLogIn] = useState(false);
-  // const id = "my-chatbot-id"
-  // const flow = {
-  //   "start": {
-  //       message: "Hello there!",
-  //       path: "end"
-  //   },
-  //   "end": {
-  //       message: "See you, goodbye!"
-  //   }
-  // }
+  const [cardRefresh, setCardRefresh] = useState(false);
+
   return (
-    <div>
-      <Navbar isLogIn={isLogIn} setIsLogIn={setIsLogIn} search={search} setSearch={setSearch}/>
-    {/* <Searchbar setSearch={setSearch}/>
-    <Signup/> */}
-    {/* <Inputs/>
-    <Cards search={search} setSearch={setSearch}/> */}
-    {/* <ChatBot id={id} flow={flow}/> */}
+    <div className="relative">
+      <Navbar
+        isLogIn={isLogIn}
+        setIsLogIn={setIsLogIn}
+        search={search}
+        setSearch={setSearch}
+        cardRefresh={cardRefresh}
+        setCardRefresh={setCardRefresh}
+      />
+
+      {/* Main UI */}
+      {/* <Inputs setCardRefresh={setCardRefresh} />
+      <Cards
+        search={search}
+        setSearch={setSearch}
+        cardRefresh={cardRefresh}
+      /> */}
+
+      {/* Floating Chatbot */}
+      {/* <ChatBot /> */}
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
