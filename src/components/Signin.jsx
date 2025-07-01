@@ -30,7 +30,7 @@ export default function Signin({setIsLogIn}) {
       if (res.status === 200){
         const data =await res.json();
         console.log(data);
-        localStorage.setItem('token', data.token);
+        localStorage.setItem('token', data.jwt);
         setIsSignedIn(true); 
         setIsLogIn(true);
       }

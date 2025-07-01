@@ -4,7 +4,7 @@ import {
   MagnifyingGlassIcon,
   ArrowLeftStartOnRectangleIcon,
 } from '@heroicons/react/20/solid';
-import ChatBot from './ChatBot';
+import ChatBot from './Chatbot.jsx';
 
 export default function Searchbar({ setSearch }) {
   const searchRef = useRef();
@@ -23,7 +23,7 @@ export default function Searchbar({ setSearch }) {
       <Popover
         as="header"
         className={({ open }) =>
-          `bg-gray-800 shadow-md text-white sticky top-0 z-50 ${
+          `shadow-md text-white sticky top-0 z-50 ${
             open ? 'overflow-y-auto' : ''
           }`
         }
@@ -37,11 +37,11 @@ export default function Searchbar({ setSearch }) {
                   <img
                     src="/note mate logo.png"
                     alt="NoteMate"
-                    className="h-10 w-auto rounded-md shadow-md"
+                    className="h-10 w-auto"
                   />
-                  <span className="text-2xl font-bold tracking-tight text-white">
+                  {/* <span className="text-2xl font-bold tracking-tight text-white">
                     NoteMate
-                  </span>
+                  </span> */}
                 </div>
 
                 {/* Search Bar */}
@@ -67,7 +67,7 @@ export default function Searchbar({ setSearch }) {
                 {/* Logout Button */}
                 <button
                   onClick={handleLogout}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-tr from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-md text-sm font-medium shadow transition-all"
+                  className="bg-gray-700 hover:bg-gray-500 inline-flex items-center gap-2 px-4 py-2 text-white rounded-md text-sm font-medium shadow transition-all"
                 >
                   <ArrowLeftStartOnRectangleIcon className="w-5 h-5" />
                   Sign Out

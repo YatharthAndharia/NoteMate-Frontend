@@ -3,7 +3,6 @@ import './App.css';
 import Navbar from './components/Navbar';
 import Inputs from './components/Inputs';
 import Cards from './components/Cards';
-import ChatBot from './components/ChatBot'; // ✅ Your custom ChatBot component
 
 function App() {
   const [search, setSearch] = useState(null);

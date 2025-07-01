@@ -3,6 +3,7 @@ import {
   TrashIcon,
   PencilIcon,
   PaperClipIcon,
+  ArrowPathIcon
 } from "@heroicons/react/24/outline";
 import { Button } from "@headlessui/react";
 import { formatDistanceToNow } from "date-fns"; // ✅ install if not already: npm install date-fns
@@ -17,6 +18,7 @@ export default function Cards({ search, setSearch, cardRefresh }) {
   const [tempTitle, setTempTitle] = useState("");
   const [tempContent, setTempContent] = useState("");
   const [tempColor, setTempColor] = useState("");
+  const [isLoading,setIsLoading] = useState(false);
   const cardRefs = useRef([]);
 
   const colorOptions = [
@@ -32,7 +34,7 @@ export default function Cards({ search, setSearch, cardRefresh }) {
   useEffect(() => {
     const fetchActions = async () => {
       try {
-        const res = await fetch("http://localhost:8000/note/all", {
+        const res = await fetch("http://localhost:8000/get-notes", {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -41,14 +43,17 @@ export default function Cards({ search, setSearch, cardRefresh }) {
         if (res.status !== 200) throw new Error("Failed to fetch notes");
 
         const data = await res.json();
+        console.log(data);
+        
+
         const notes = data.notes.map((note) => ({
-          note_id: note.note_id,
-          title: note.title,
-          content: note.content,
-          color: note.color || "bg-white",
-          is_pinned: note.is_pinned,
-          created_at: note.created_at,
-          updated_at: note.updated_at,
+          note_id: note[0],
+          title: note[2],
+          content: note[3],
+          color: note[6] || "bg-white",
+          is_pinned: note[4],
+          created_at: note[7],
+          updated_at: note[8],
         }));
 
         const pinned = notes.filter((n) => n.is_pinned);
@@ -92,7 +97,8 @@ export default function Cards({ search, setSearch, cardRefresh }) {
     if (editingIndex === null) return;
     const note = actions[editingIndex];
     try {
-      const res = await fetch(`http://localhost:8000/note/update/${note.note_id}`, {
+      setIsLoading(true);
+      const res = await fetch(`http://localhost:8000/update-note/${note.note_id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -115,6 +121,7 @@ export default function Cards({ search, setSearch, cardRefresh }) {
         };
         setActions(updated);
         setEditingIndex(null);
+        setIsLoading(false);
       } else {
         alert("Failed to update note.");
       }
@@ -128,7 +135,7 @@ export default function Cards({ search, setSearch, cardRefresh }) {
     const note = actions[index];
     const updatedPin = !note.is_pinned;
     try {
-      const res = await fetch(`http://localhost:8000/note/update/${note.note_id}`, {
+      const res = await fetch(`http://localhost:8000/update-note/${note.note_id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -161,7 +168,7 @@ export default function Cards({ search, setSearch, cardRefresh }) {
     const note = actions[index];
     if (!window.confirm("Delete this note?")) return;
     try {
-      const res = await fetch(`http://localhost:8000/note/delete/${note.note_id}`, {
+      const res = await fetch(`http://localhost:8000/delete-note/${note.note_id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -250,7 +257,10 @@ export default function Cards({ search, setSearch, cardRefresh }) {
                       className="flex items-center gap-2 px-4 py-2 text-sm bg-green-200 hover:bg-green-300 text-green-900 rounded shadow"
                     >
                       <PencilIcon className="w-4 h-4" />
-                      Save
+                      Save{isLoading && <span className="animate-spin"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+</svg>
+</span>}
                     </button>
                     <button
                       onClick={() => handleDelete(index)}

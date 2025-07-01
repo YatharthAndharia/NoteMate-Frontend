@@ -35,7 +35,7 @@ export default function Inputs({ setCardRefresh }) {
     }
 
     try {
-      const res = await fetch("http://localhost:8000/note/create", {
+      const res = await fetch("http://localhost:8000/create-note", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
